@@ -144,6 +144,46 @@ export function useGameFlow() {
 
   // 进入游戏结束结算状态
   const goToGameOver = () => {
+    console.log('=== goToGameOver called in useGameFlow!')
+    console.log('roundHistory:', roundHistory.value)
+    console.log('score:', score.value)
+
+    // 保存历史记录到localStorage
+    if (roundHistory.value.length > 0) {
+      try {
+        const record = {
+          date: new Date().toISOString(),
+          score: score.value,
+          completedRounds: roundHistory.value.length,
+          totalRounds: maxRounds.value,
+          rounds: roundHistory.value
+        }
+
+        console.log('Saving record:', record)
+
+        // 读取现有历史
+        let history = []
+        const existing = localStorage.getItem('aiDrawGameHistory')
+        if (existing) {
+          history = JSON.parse(existing)
+        }
+
+        history.unshift(record)
+
+        // 只保留最近20条
+        if (history.length > 20) {
+          history = history.slice(0, 20)
+        }
+
+        localStorage.setItem('aiDrawGameHistory', JSON.stringify(history))
+        console.log('History saved successfully!')
+      } catch (e) {
+        console.error('Failed to save history in useGameFlow:', e)
+      }
+    } else {
+      console.log('No rounds to save')
+    }
+
     clearInterval(timer)
     status.value = GAME_STATUS.GAME_OVER
   }

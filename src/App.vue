@@ -94,7 +94,7 @@
             <button class="btn primary start-btn" @click="handleStartGame">
               开始游戏
             </button>
-            <button class="btn secondary history-btn" @click="showHistory = true">
+            <button class="btn secondary history-btn" @click="openHistory">
               📋 历史记录
             </button>
           </div>
@@ -375,48 +375,35 @@ const loadHistory = () => {
   }
 }
 
-// 保存历史记录
-const saveHistory = () => {
-  console.log('saveHistory called! roundHistory.length:', roundHistory.value.length)
-  console.log('score:', score.value)
-
-  if (roundHistory.value.length === 0) {
-    console.log('No rounds, skipping save')
-    return
-  }
-
-  const record = {
-    date: new Date().toISOString(),
-    score: score.value,
-    completedRounds: roundHistory.value.length,
-    totalRounds: maxRounds.value,
-    rounds: roundHistory.value
-  }
-
-  console.log('Adding record:', record)
-  gameHistory.value.unshift(record)
-  // 只保留最近20条记录
-  if (gameHistory.value.length > 20) {
-    gameHistory.value = gameHistory.value.slice(0, 20)
-  }
-
+// 加载历史记录
+const loadHistoryFromStorage = () => {
   try {
-    console.log('Saving to localStorage:', gameHistory.value)
-    localStorage.setItem('aiDrawGameHistory', JSON.stringify(gameHistory.value))
-    console.log('Save successful!')
+    const existing = localStorage.getItem('aiDrawGameHistory')
+    if (existing) {
+      gameHistory.value = JSON.parse(existing)
+      console.log('Loaded history from storage:', gameHistory.value.length, 'records')
+    }
   } catch (e) {
-    console.error('Failed to save history:', e)
+    console.error('Failed to load history:', e)
   }
 }
 
 // 清空历史记录
 const clearHistory = () => {
+  console.log('Clearing history')
   gameHistory.value = []
   try {
     localStorage.removeItem('aiDrawGameHistory')
   } catch (e) {
     console.error('Failed to clear history:', e)
   }
+}
+
+// 打开历史记录时重新从localStorage加载
+const openHistory = () => {
+  console.log('Opening history, reloading from storage')
+  loadHistoryFromStorage()
+  showHistory.value = true
 }
 
 const closeHistory = () => {
@@ -427,14 +414,14 @@ const closeHistory = () => {
 const selectDifficulty = (diff) => {
   selectedDifficulty.value = diff
   const config = DIFFICULTIES[diff]
+  console.log('Setting difficulty:', config)
   setMaxRounds(config.rounds)
   setDrawTime(config.drawTime)
 }
 
-// 确保保存历史记录
+// 直接调用useGameFlow中的goToGameOver
 const handleGoToGameOver = () => {
-  console.log('handleGoToGameOver called')
-  saveHistory()
+  console.log('handleGoToGameOver called, forwarding to useGameFlow')
   goToGameOver()
 }
 
@@ -457,12 +444,15 @@ const handleNextRound = () => {
 }
 
 const handleStartGame = () => {
+  console.log('=== handleStartGame called ===')
   // 确保难度设置在开始游戏前生效
   const config = DIFFICULTIES[selectedDifficulty.value]
+  console.log('Selected difficulty:', config)
   setMaxRounds(config.rounds)
   setDrawTime(config.drawTime)
   handleClearCanvas()
   startGame()
+  console.log('Game started!')
 }
 
 const handleEndGame = () => {
@@ -472,9 +462,7 @@ const handleEndGame = () => {
 const confirmEndGame = () => {
   showEndConfirm.value = false
   console.log('confirmEndGame called')
-  // 先保存历史记录
-  saveHistory()
-  // 然后跳转到结算页面而不是直接结束
+  // 直接跳转到结算页面，useGameFlow会处理保存
   handleGoToGameOver()
 }
 
@@ -483,7 +471,8 @@ const cancelEndGame = () => {
 }
 
 onMounted(() => {
-  loadHistory()
+  console.log('App mounted, loading history')
+  loadHistoryFromStorage()
   // 初始化默认难度
   selectDifficulty(selectedDifficulty.value)
 })
