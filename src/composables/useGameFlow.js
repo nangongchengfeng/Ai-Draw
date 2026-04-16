@@ -16,11 +16,22 @@ export function useGameFlow() {
   const score = ref(0)
   const timeLeft = ref(import.meta.env.VITE_GAME_DRAW_TIME || 60)
   const maxRounds = ref(import.meta.env.VITE_GAME_MAX_ROUNDS || 10)
+  const gameDrawTime = ref(import.meta.env.VITE_GAME_DRAW_TIME || 60)
   const aiResult = ref('')
   const error = ref('')
   const targetWord = ref(null) // 当前目标词
   const roundHistory = ref([]) // 每轮历史记录
   let timer = null
+
+  // 设置最大轮数
+  const setMaxRounds = (count) => {
+    maxRounds.value = count
+  }
+
+  // 设置每轮时间
+  const setDrawTime = (seconds) => {
+    gameDrawTime.value = seconds
+  }
 
   const isGameOver = computed(() => currentRound.value > maxRounds.value)
 
@@ -38,7 +49,7 @@ export function useGameFlow() {
 
   // 开始倒计时
   const startTimer = () => {
-    timeLeft.value = import.meta.env.VITE_GAME_DRAW_TIME || 60
+    timeLeft.value = gameDrawTime.value
     clearInterval(timer)
     timer = setInterval(() => {
       timeLeft.value--
@@ -195,6 +206,8 @@ export function useGameFlow() {
     endGame,
     returnToStart,
     goToGameOver,
+    setMaxRounds,
+    setDrawTime,
     cleanup
   }
 }

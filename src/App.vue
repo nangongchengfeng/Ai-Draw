@@ -63,13 +63,32 @@
       <div v-if="gameStatus === GAME_STATUS.IDLE" class="start-screen fade-in">
         <div class="card">
           <h1 class="game-title">🎨 我画AI猜</h1>
+
+          <!-- 难度选择 -->
+          <div class="difficulty-selector">
+            <h3>选择难度</h3>
+            <div class="difficulty-buttons">
+              <button
+                v-for="(config, key) in DIFFICULTIES"
+                :key="key"
+                class="btn difficulty-btn"
+                :class="{ selected: selectedDifficulty === key, primary: selectedDifficulty === key, secondary: selectedDifficulty !== key }"
+                @click="selectDifficulty(key)"
+              >
+                <span class="diff-icon">{{ config.icon }}</span>
+                <span class="diff-name">{{ config.name }}</span>
+                <span class="diff-info">{{ config.rounds }}轮 / {{ config.drawTime }}秒</span>
+              </button>
+            </div>
+          </div>
+
           <h2>游戏规则</h2>
           <ul class="rules">
             <li>每轮系统会给出一个词语</li>
-            <li>你有{{ drawTime }}秒时间画出这个词语</li>
+            <li>你有{{ DIFFICULTIES[selectedDifficulty].drawTime }}秒时间画出这个词语</li>
             <li>AI会根据你的画作猜测内容</li>
             <li>AI猜得越快越准确，得分越高</li>
-            <li>总共{{ maxRounds }}轮，看看你能得多少分！</li>
+            <li>总共{{ DIFFICULTIES[selectedDifficulty].rounds }}轮，看看你能得多少分！</li>
           </ul>
           <div class="start-buttons">
             <button class="btn primary start-btn" @click="handleStartGame">
@@ -238,7 +257,7 @@
                   <button v-if="!isGameOver" class="btn primary" @click="handleNextRound">
                     下一轮 →
                   </button>
-                  <button v-else class="btn success" @click="goToGameOver">
+                  <button v-else class="btn success" @click="handleGoToGameOver">
                     查看成绩 📊
                   </button>
                 </div>
@@ -269,6 +288,15 @@ import DrawingCanvas from './components/Canvas/DrawingCanvas.vue'
 import DoodleDecorations from './components/DoodleDecorations.vue'
 import { useGameFlow, GAME_STATUS } from './composables/useGameFlow'
 
+// 难度配置
+const DIFFICULTIES = {
+  easy: { name: '简单', rounds: 3, drawTime: 90, icon: '😊' },
+  normal: { name: '中等', rounds: 5, drawTime: 60, icon: '😐' },
+  hard: { name: '困难', rounds: 8, drawTime: 30, icon: '😤' }
+}
+
+const selectedDifficulty = ref('normal')
+
 const {
   status: gameStatus,
   currentRound,
@@ -286,7 +314,9 @@ const {
   endGame,
   returnToStart,
   goToGameOver,
-  cleanup
+  cleanup,
+  setMaxRounds,
+  setDrawTime
 } = useGameFlow()
 
 const canvasRef = ref(null)
@@ -384,6 +414,20 @@ const closeHistory = () => {
   showHistory.value = false
 }
 
+// 选择难度
+const selectDifficulty = (diff) => {
+  selectedDifficulty.value = diff
+  const config = DIFFICULTIES[diff]
+  setMaxRounds(config.rounds)
+  setDrawTime(config.drawTime)
+}
+
+// 确保保存历史记录
+const handleGoToGameOver = () => {
+  saveHistory()
+  goToGameOver()
+}
+
 const onDrawingChange = (data) => {
   hasDrawing.value = !!data
 }
@@ -403,6 +447,10 @@ const handleNextRound = () => {
 }
 
 const handleStartGame = () => {
+  // 确保难度设置在开始游戏前生效
+  const config = DIFFICULTIES[selectedDifficulty.value]
+  setMaxRounds(config.rounds)
+  setDrawTime(config.drawTime)
   handleClearCanvas()
   startGame()
 }
@@ -413,6 +461,8 @@ const handleEndGame = () => {
 
 const confirmEndGame = () => {
   showEndConfirm.value = false
+  // 保存历史记录再结束
+  saveHistory()
   endGame()
 }
 
@@ -420,16 +470,10 @@ const cancelEndGame = () => {
   showEndConfirm.value = false
 }
 
-// 监听游戏结束状态，自动保存历史
-const originalGoToGameOver = goToGameOver
-const wrappedGoToGameOver = () => {
-  saveHistory()
-  originalGoToGameOver()
-}
-
-// 覆盖goToGameOver方法
 onMounted(() => {
   loadHistory()
+  // 初始化默认难度
+  selectDifficulty(selectedDifficulty.value)
 })
 
 onBeforeUnmount(() => {
@@ -481,6 +525,49 @@ onBeforeUnmount(() => {
       color: var(--color-text-primary);
     }
 
+    /* 难度选择器 */
+    .difficulty-selector {
+      margin-bottom: 20px;
+      text-align: left;
+
+      h3 {
+        font-size: 18px;
+        margin-bottom: 12px;
+        color: var(--color-text-primary);
+        text-align: center;
+      }
+
+      .difficulty-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .difficulty-btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+
+        .diff-icon {
+          font-size: 24px;
+        }
+
+        .diff-name {
+          font-size: 15px;
+          font-weight: 600;
+        }
+
+        .diff-info {
+          font-size: 11px;
+          opacity: 0.8;
+        }
+      }
+    }
+
     .rules {
       text-align: left;
       margin-bottom: 24px;
@@ -526,17 +613,18 @@ onBeforeUnmount(() => {
 .game-over-screen {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  box-sizing: border-box;
 
   .game-over-card {
     max-width: 600px;
     width: 100%;
     text-align: center;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-height: none;
+    flex-shrink: 0;
   }
 
   .game-over-title {
@@ -1049,6 +1137,13 @@ onBeforeUnmount(() => {
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
+
+  .modal-card {
+    max-width: 400px;
+    width: 100%;
+    flex-shrink: 0;
+  }
 
   &.history-modal {
     .history-card {
@@ -1056,6 +1151,7 @@ onBeforeUnmount(() => {
       width: 100%;
       max-height: 80vh;
       overflow-y: auto;
+      flex-shrink: 0;
     }
 
     .empty-history {
