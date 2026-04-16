@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&family=Quicksand:wght@400;600;700&display=swap');
+
+:root {
+  // Color palette
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #FFFBEB;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted: #9CA3AF;
+  --color-brand-primary: #F59E0B;
+  --color-brand-accent: #EC4899;
+  --color-border-strong: #1A1A1A;
+  --color-border-subtle: rgba(0, 0, 0, 0.1);
+  --color-focus-ring: #F59E0B;
+
+  // Gradient background
+  --color-gradient-start: #F59E0B;
+  --color-gradient-end: #EC4899;
+
+  // Radius
+  --radius-none: 0px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-irregular: 255px 15px 225px 15px / 15px 225px 15px 255px;
+
+  // Border width
+  --border-hairline: 1px;
+  --border-medium: 2px;
+  --border-strong: 3px;
+
+  // Shadow
+  --shadow-soft: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
+
+  // Layout
+  --container-content: 1100px;
+  --container-wide: 1200px;
+
+  // Motion
+  --motion-duration-fast: 200ms;
+  --motion-duration-normal: 400ms;
+  --motion-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  // Typography
+  --font-sans-primary: 'Indie Flower', 'Quicksand', sans-serif;
+  --font-size-h1: 56px;
+  --font-line-h1: 64px;
+  --font-weight-h1: 400;
+  --font-tracking-h1: 0.02em;
+  --font-size-h2: 40px;
+  --font-line-h2: 48px;
+  --font-weight-h2: 400;
+  --font-tracking-h2: 0.01em;
+  --font-size-body: 18px;
+  --font-line-body: 28px;
+  --font-weight-body: 400;
+  --font-tracking-body: 0em;
+
+  // Spacing
+  --spacing-base: 10px;
+  --spacing-section-py-mobile: 80px 100px;
+  --spacing-section-py-desktop: 120px 160px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans-primary);
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: var(--container-content);
+  margin: 0 auto;
+}
+
+.btn {
+  padding: calc(var(--spacing-base) * 1.2) calc(var(--spacing-base) * 2.4);
+  border: var(--border-medium) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--motion-duration-normal) var(--motion-easing);
+  box-shadow: var(--shadow-soft);
+  font-family: var(--font-sans-primary);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-4px) rotate(-1deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  &.primary {
+    background: var(--color-brand-primary);
+    color: var(--color-bg-primary);
+  }
+
+  &.success {
+    background: #48bb78;
+    color: var(--color-bg-primary);
+  }
+
+  &.warning {
+    background: var(--color-brand-accent);
+    color: var(--color-bg-primary);
+  }
+
+  &.danger {
+    background: #f56565;
+    color: var(--color-bg-primary);
+  }
+
+  &.secondary {
+    background: var(--color-text-muted);
+    color: var(--color-bg-primary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.card {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: calc(var(--spacing-base) * 2.4);
+  box-shadow: var(--shadow-soft);
+  border: var(--border-medium) solid var(--color-border-strong);
+  position: relative;
+
+  // 手绘风格装饰效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border: var(--border-hairline) dashed var(--color-brand-primary);
+    border-radius: var(--radius-lg);
+    pointer-events: none;
+    opacity: 0.3;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotate(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--motion-duration-normal) var(--motion-easing) forwards;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+.pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.wiggle {
+  animation: wiggle var(--motion-duration-normal) var(--motion-easing) infinite;
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bounce-in {
+  animation: bounce-in var(--motion-duration-normal) var(--motion-easing) forwards;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-20px) rotate(calc(var(--rotation, 0deg) + 5deg));
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
