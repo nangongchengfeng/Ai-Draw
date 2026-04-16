@@ -377,7 +377,13 @@ const loadHistory = () => {
 
 // 保存历史记录
 const saveHistory = () => {
-  if (roundHistory.value.length === 0) return
+  console.log('saveHistory called! roundHistory.length:', roundHistory.value.length)
+  console.log('score:', score.value)
+
+  if (roundHistory.value.length === 0) {
+    console.log('No rounds, skipping save')
+    return
+  }
 
   const record = {
     date: new Date().toISOString(),
@@ -387,6 +393,7 @@ const saveHistory = () => {
     rounds: roundHistory.value
   }
 
+  console.log('Adding record:', record)
   gameHistory.value.unshift(record)
   // 只保留最近20条记录
   if (gameHistory.value.length > 20) {
@@ -394,7 +401,9 @@ const saveHistory = () => {
   }
 
   try {
+    console.log('Saving to localStorage:', gameHistory.value)
     localStorage.setItem('aiDrawGameHistory', JSON.stringify(gameHistory.value))
+    console.log('Save successful!')
   } catch (e) {
     console.error('Failed to save history:', e)
   }
@@ -424,6 +433,7 @@ const selectDifficulty = (diff) => {
 
 // 确保保存历史记录
 const handleGoToGameOver = () => {
+  console.log('handleGoToGameOver called')
   saveHistory()
   goToGameOver()
 }
@@ -461,9 +471,11 @@ const handleEndGame = () => {
 
 const confirmEndGame = () => {
   showEndConfirm.value = false
-  // 保存历史记录再结束
+  console.log('confirmEndGame called')
+  // 先保存历史记录
   saveHistory()
-  endGame()
+  // 然后跳转到结算页面而不是直接结束
+  handleGoToGameOver()
 }
 
 const cancelEndGame = () => {
@@ -507,8 +519,8 @@ onBeforeUnmount(() => {
   padding: 20px;
 
   .card {
-    max-width: 550px;
-    width: 100%;
+    width: 550px;
+    max-width: 90vw;
     text-align: center;
 
     .game-title {
@@ -620,8 +632,8 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 
   .game-over-card {
-    max-width: 600px;
-    width: 100%;
+    width: 600px;
+    max-width: 90vw;
     text-align: center;
     max-height: none;
     flex-shrink: 0;
@@ -1138,20 +1150,22 @@ onBeforeUnmount(() => {
   z-index: 1000;
   padding: 20px;
   box-sizing: border-box;
+  overflow: hidden;
 
   .modal-card {
-    max-width: 400px;
-    width: 100%;
+    width: 400px;
+    max-width: 90vw;
     flex-shrink: 0;
   }
 
   &.history-modal {
     .history-card {
-      max-width: 500px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
+      width: 500px;
+      max-width: 90vw;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      max-height: 80vh;
     }
 
     .empty-history {
@@ -1169,7 +1183,8 @@ onBeforeUnmount(() => {
       flex-direction: column;
       gap: 10px;
       margin-bottom: 20px;
-      max-height: 400px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
     }
 
