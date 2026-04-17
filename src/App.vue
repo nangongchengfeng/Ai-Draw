@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" @click="onAppClick">
     <DoodleDecorations />
 
     <!-- 结束游戏确认弹窗 -->
@@ -62,6 +62,23 @@
       <!-- 游戏开始界面 -->
       <div v-if="gameStatus === GAME_STATUS.IDLE" class="start-screen fade-in">
         <div class="card">
+          <!-- 音频控制栏 -->
+          <div class="audio-controls-inline">
+            <button
+              class="audio-btn-inline"
+              @click="toggleMusic"
+              :title="musicEnabled ? '关闭音乐' : '开启音乐'"
+            >
+              {{ musicEnabled ? '🔊' : '🔇' }}
+            </button>
+            <button
+              class="audio-btn-inline"
+              @click="toggleSound"
+              :title="soundEnabled ? '关闭音效' : '开启音效'"
+            >
+              {{ soundEnabled ? '🔔' : '🔕' }}
+            </button>
+          </div>
           <h1 class="game-title">🎨 我画AI猜</h1>
 
           <!-- 难度选择 -->
@@ -104,6 +121,23 @@
       <!-- 游戏结束结算页面 -->
       <div v-else-if="gameStatus === GAME_STATUS.GAME_OVER" class="game-over-screen fade-in">
         <div class="card game-over-card">
+          <!-- 音频控制栏 -->
+          <div class="audio-controls-inline">
+            <button
+              class="audio-btn-inline"
+              @click="toggleMusic"
+              :title="musicEnabled ? '关闭音乐' : '开启音乐'"
+            >
+              {{ musicEnabled ? '🔊' : '🔇' }}
+            </button>
+            <button
+              class="audio-btn-inline"
+              @click="toggleSound"
+              :title="soundEnabled ? '关闭音效' : '开启音效'"
+            >
+              {{ soundEnabled ? '🔔' : '🔕' }}
+            </button>
+          </div>
           <h1 class="game-over-title">🎉 游戏结束！</h1>
 
           <div class="final-score-section">
@@ -208,6 +242,23 @@
 
           <!-- AI猜测区域 -->
           <div class="result-section card">
+            <!-- 音频控制栏 -->
+            <div class="audio-controls-inline">
+              <button
+                class="audio-btn-inline"
+                @click="toggleMusic"
+                :title="musicEnabled ? '关闭音乐' : '开启音乐'"
+              >
+                {{ musicEnabled ? '🔊' : '🔇' }}
+              </button>
+              <button
+                class="audio-btn-inline"
+                @click="toggleSound"
+                :title="soundEnabled ? '关闭音效' : '开启音效'"
+              >
+                {{ soundEnabled ? '🔔' : '🔕' }}
+              </button>
+            </div>
             <div class="result-content">
               <!-- 加载状态 -->
               <div v-if="gameStatus === GAME_STATUS.RECOGNIZING" class="status-container loading-state">
@@ -287,6 +338,7 @@ import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import DrawingCanvas from './components/Canvas/DrawingCanvas.vue'
 import DoodleDecorations from './components/DoodleDecorations.vue'
 import { useGameFlow, GAME_STATUS } from './composables/useGameFlow'
+import { useAudio } from './composables/useAudio'
 
 // 难度配置
 const DIFFICULTIES = {
@@ -312,12 +364,27 @@ const {
   submitDrawing: submitToAI,
   nextRound,
   endGame,
-  returnToStart,
+  returnToStart: _returnToStart,
   goToGameOver,
   cleanup,
   setMaxRounds,
   setDrawTime
 } = useGameFlow()
+
+// 音频功能
+const {
+  soundEnabled,
+  musicEnabled,
+  initAudioContext,
+  playSuccessSound,
+  playErrorSound,
+  playClickSound,
+  startBGM,
+  stopBGM,
+  toggleSound,
+  toggleMusic,
+  requestAutoStart
+} = useAudio()
 
 const canvasRef = ref(null)
 const hasDrawing = ref(false)
@@ -343,6 +410,18 @@ const lastRoundData = computed(() => {
   if (roundHistory.value.length === 0) return null
   return roundHistory.value[roundHistory.value.length - 1]
 })
+
+// 监听AI识别结果，播放对应音效
+const watchAiResult = () => {
+  if (roundHistory.value.length > 0) {
+    const lastRound = roundHistory.value[roundHistory.value.length - 1]
+    if (lastRound.matched) {
+      playSuccessSound()
+    } else {
+      playErrorSound()
+    }
+  }
+}
 
 // 获取玩家称号
 const getPlayerTitle = (finalScore) => {
@@ -388,8 +467,21 @@ const loadHistoryFromStorage = () => {
   }
 }
 
-// 清空历史记录
+// 打开历史记录时重新从localStorage加载
+const openHistory = () => {
+  playClickSound()
+  console.log('Opening history, reloading from storage')
+  loadHistoryFromStorage()
+  showHistory.value = true
+}
+
+const closeHistory = () => {
+  playClickSound()
+  showHistory.value = false
+}
+
 const clearHistory = () => {
+  playClickSound()
   console.log('Clearing history')
   gameHistory.value = []
   try {
@@ -399,19 +491,17 @@ const clearHistory = () => {
   }
 }
 
-// 打开历史记录时重新从localStorage加载
-const openHistory = () => {
-  console.log('Opening history, reloading from storage')
-  loadHistoryFromStorage()
-  showHistory.value = true
-}
-
-const closeHistory = () => {
-  showHistory.value = false
+// 从游戏结束回到开始
+const returnToStart = () => {
+  playClickSound()
+  stopBGM() // 停止背景音乐
+  // 调用 useGameFlow 中的 returnToStart
+  _returnToStart()
 }
 
 // 选择难度
 const selectDifficulty = (diff) => {
+  playClickSound()
   selectedDifficulty.value = diff
   const config = DIFFICULTIES[diff]
   console.log('Setting difficulty:', config)
@@ -430,20 +520,27 @@ const onDrawingChange = (data) => {
 }
 
 const handleClearCanvas = () => {
+  playClickSound()
   canvasRef.value?.clearCanvas()
 }
 
 const submitDrawing = async () => {
+  playClickSound()
   const canvasData = canvasRef.value?.getCanvasData()
   await submitToAI(canvasData)
+  // 监听结果，播放音效
+  setTimeout(watchAiResult, 100)
 }
 
 const handleNextRound = () => {
+  playClickSound()
   handleClearCanvas()
   nextRound()
 }
 
 const handleStartGame = () => {
+  playClickSound()
+  requestAutoStart() // 请求自动播放（会初始化音频上下文并尝试播放BGM）
   console.log('=== handleStartGame called ===')
   // 确保难度设置在开始游戏前生效
   const config = DIFFICULTIES[selectedDifficulty.value]
@@ -456,10 +553,13 @@ const handleStartGame = () => {
 }
 
 const handleEndGame = () => {
+  playClickSound()
   showEndConfirm.value = true
 }
 
 const confirmEndGame = () => {
+  playClickSound()
+  stopBGM() // 停止背景音乐
   showEndConfirm.value = false
   console.log('confirmEndGame called')
   // 直接跳转到结算页面，useGameFlow会处理保存
@@ -467,7 +567,17 @@ const confirmEndGame = () => {
 }
 
 const cancelEndGame = () => {
+  playClickSound()
   showEndConfirm.value = false
+}
+
+// 应用点击处理 - 用于激活音频上下文
+let audioContextActivated = false
+const onAppClick = () => {
+  if (!audioContextActivated) {
+    audioContextActivated = true
+    requestAutoStart()
+  }
 }
 
 onMounted(() => {
@@ -1269,6 +1379,39 @@ onBeforeUnmount(() => {
 
   .btn {
     flex: 1;
+  }
+}
+
+/* 内联音频控制栏 */
+.audio-controls-inline {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-bottom: var(--border-hairline) dashed var(--color-border-subtle);
+
+  .audio-btn-inline {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    border: var(--border-medium) solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--motion-duration-fast) var(--motion-easing);
+
+    &:hover {
+      transform: scale(1.1) rotate(5deg);
+      background: var(--color-bg-secondary);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
   }
 }
 </style>

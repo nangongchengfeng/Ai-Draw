@@ -57,6 +57,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useAudio } from '../../composables/useAudio'
 
 const props = defineProps({
   width: {
@@ -70,6 +71,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['drawingChange'])
+
+// 音频功能
+const { startDrawSound, stopDrawSound } = useAudio()
 
 const canvasRef = ref(null)
 const canvasWidth = ref(props.width)
@@ -197,6 +201,7 @@ const startDrawing = (e) => {
   const { x, y } = getPointerPos(e)
   ctx.value.beginPath()
   ctx.value.moveTo(x, y)
+  startDrawSound() // 开始绘画音效
 }
 
 // 绘图中
@@ -214,6 +219,7 @@ const stopDrawing = () => {
   if (!isDrawing.value) return
   isDrawing.value = false
   saveState()
+  stopDrawSound() // 停止绘画音效
 }
 
 // 处理触摸事件
