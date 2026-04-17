@@ -5,10 +5,9 @@
       :max-rounds="maxRounds"
       :score="score"
       :time-left="timeLeft"
+      :target-word="targetWord"
       @end-game="$emit('endGame')"
     />
-
-    <TargetWordBar :target-word="targetWord" />
 
     <div class="game-main">
       <CanvasSection
@@ -46,7 +45,6 @@
 <script setup>
 import { ref, computed } from 'vue'
 import TopBar from '../game/TopBar.vue'
-import TargetWordBar from '../game/TargetWordBar.vue'
 import CanvasSection from '../game/CanvasSection.vue'
 import ResultSection from '../game/ResultSection.vue'
 import { GAME_STATUS } from '../../composables/useGameFlow'
